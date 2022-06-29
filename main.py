@@ -1,5 +1,8 @@
 import pymongo
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+import auth
 
 # from .db import read, read_one, create, update, delete 
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,6 +57,12 @@ def autocomp(q):
     result["data"]=data
 
     return result
+
+app.include_router(auth.router)
+
 @app.get("/")
 def home():
     return {"Let's": "Go"}
+
+if __name__ == '__main__':
+    uvicorn.run(app, port=8000)
