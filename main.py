@@ -25,6 +25,3 @@ app.include_router(auth.router)
 @app.get("/")
 def home():
     return {"Let's": "Go"}
-
-if __name__ == '__main__':
-    uvicorn.run(app, port=8000)
