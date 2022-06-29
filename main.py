@@ -5,8 +5,12 @@ from bson.objectid import ObjectId
 client = pymongo.MongoClient("mongodb+srv://partnersInCrime:partners123@cluster0.grt0lph.mongodb.net/?retryWrites=true&w=majority")
 db = client["partnersInCrime"]
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+import auth
 
 #from .db import read, read_one, create, update, delete 
+
 
 app = FastAPI()
 @app.get("/suggestions")
@@ -47,8 +51,26 @@ def autocomp(q):
 
 
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router)
+
 @app.get("/")
 def home():
     return {"Let's": "Go"}
+<<<<<<< HEAD
+=======
+
+>>>>>>> 62ab6d16395117a83ecbe8d2ba2ec5fb94eb981f
 if __name__ == '__main__':
     uvicorn.run(app, port=8000)
