@@ -3,7 +3,6 @@ from bson.objectid import ObjectId
 
 client = pymongo.MongoClient("mongodb+srv://partnersInCrime:partners123@cluster0.grt0lph.mongodb.net/?retryWrites=true&w=majority")
 db = client["partnersInCrime"]
-
 def read(db, collection, query):
     return db[collection].find(query)
 def read_one(db, collection, query):
