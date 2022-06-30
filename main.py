@@ -1,3 +1,4 @@
+from typing import Collection
 import pymongo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +31,7 @@ def autocomp(q):
        'index': 'autodefault',
        "autocomplete": {
          "query": q,
-         "path": "name",
+         "path":'name',
         "tokenOrder": "sequential"
        }
       }
@@ -53,6 +54,19 @@ def autocomp(q):
     for i in list(aggregatedresult):
         count+=1
         data.append({"name":i["name"]})
+    skillCollection = db['skills']
+    pipeline[-1] = {
+     '$project': {
+       "name": 1,
+        "subskills": 1
+     }
+   }
+    aggregatedresult=skillCollection.aggregate(pipeline)
+    for i in list(aggregatedresult):
+        count+=1
+        data.append({"name":i["name"]})
+        for j in i["subskills"]:
+            data.append({"name":j})
     result["meta"]={"total":count}
     result["data"]=data
 
