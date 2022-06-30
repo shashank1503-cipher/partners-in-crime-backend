@@ -31,7 +31,7 @@ async def addUser(req: Request):
     data = json.loads(data)
     data = data['user']
 
-    new_data = checkIfUserExists(data['_id'])
+    new_data = checkIfUserExists(data['g_id'])
     # print("Data 2: ", data)
     if not new_data:
         addUser(data)
@@ -47,7 +47,7 @@ async def addUser(req: Request):
 
 
 def checkIfUserExists(id):
-    data = read_one(db, 'users', {'_id':f'{id}'})
+    data = read_one(db, 'users', {'g_id':f'{id}'})
 
     if not data:
         return None
