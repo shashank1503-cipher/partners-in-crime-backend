@@ -4,6 +4,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from bson import ObjectId
+import auth
+
+
+# from .db import read, read_one, create, update, delete 
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth import verify
@@ -162,10 +166,8 @@ def update_notification(req: Request,id:str):
     print(e)
     raise HTTPException(status_code=500, detail="Error Updating Notification")
     
+app.include_router(auth.router)
 
 @app.get("/")
 def home():
     return {"Let's": "Go"}
-
-if __name__ == '__main__':
-    uvicorn.run(app, port=8000)
