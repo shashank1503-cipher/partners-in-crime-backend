@@ -70,12 +70,12 @@ def autocomp(q):
     aggregatedresult=skillCollection.aggregate(pipeline)
     for i in list(aggregatedresult):
         count+=1
-        data.append({"name":i["name"] + " " + "Developer"})
+        data.append({"name":i["name"]})
         subskills = i.get("subskills", [])
         for j in subskills:
             if j:
                 count+=1
-                data.append({"name":j + " " + "Developer"})
+                data.append({"name":j})
     result["meta"]={"total":count}
     result["data"]=data
 
@@ -166,7 +166,42 @@ def update_notification(req: Request,id:str):
     print(e)
     raise HTTPException(status_code=500, detail="Error Updating Notification")
     
-app.include_router(auth.router)
+# app.include_router(auth.router)
+
+
+# fetch 
+@app.get('/search')
+def findkey(req: Request,q):
+  count=db.users.count_documents({"name": q})
+  cursor = db.users.find({"name": q})
+  res={}
+  res["meta"]={}
+  res["data"]=[]
+  for i in list(cursor):
+    i["_id"]=str(i["_id"])
+    res["data"].append(i)
+  res["meta"]={"count":count}
+  cursor = db.skills.find_one({"name": q})
+  if(cursor):
+    main_skill=cursor["name"]
+    sub_skills=cursor["subskills"]
+    fetch_main_profile=db.users.find({"skills":{"$regex":main_skill,"$options":"i"}})
+    for i in list(fetch_main_profile):
+      i["_id"]=str(i["_id"])
+      res["data"].append(i)
+    for sub_skill in sub_skills:
+      fetch_sub_profile=db.users.find({"skills":{"$regex":sub_skill,"$options":"i"}})
+      for i in list(fetch_sub_profile):
+        i["_id"]=str(i["_id"])
+        res["data"].append(i) 
+  else:
+    fetch_query=db.users.find({"skills":{"$regex":q,"$options":"i"}})
+    for i in list(fetch_query):
+      i["_id"]=str(i["_id"])
+      res["data"].append(i)
+    res["meta"]={"count":count}
+  return res
+
 
 @app.post("/addfavourite")
 async def add_favourite(req: Request):
