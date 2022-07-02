@@ -1,7 +1,7 @@
 from typing import Union
 from fastapi import  Header, APIRouter, Request
-from google.oauth2 import id_token
-from google.auth.transport import requests
+# from google.oauth2 import id_token
+# from google.auth.transport import requests
 from pydantic import BaseModel
 import json
 from db import db, read_one, create
