@@ -203,6 +203,62 @@ def findkey(req: Request,q):
   return res
 
 
+@app.post("/addfavourite")
+async def add_favourite(req: Request):
+  # user = verify(req.headers.get("Authorization"))
+  # if not user:
+  #   raise HTTPException(status_code=401, detail="Unauthorized")
+  # user_email = user.get("email", None)
+  # if not user_email:
+  #   raise HTTPException(status_code=400, detail="User Email Not Found")
+  user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  result = {}
+  data = await req.body()
+  if data:
+    data = json.loads(data)
+  result['user_id'] = fetch_user.get("_id", None)
+  result['hackathon_id'] = data.get("hackathon_id", None)
+  result['project_id'] = data.get("project_id", None)
+  try:
+    collection = db["favourites"]
+    fetch_inserted_project = collection.insert_one(result)
+    fid = str(fetch_inserted_project.inserted_id)
+    result.pop("_id")
+    result.pop("user_id")
+    return {"meta":{"inserted_id":fid},"data":result}
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error Adding Favourite")
+@app.delete('/deleteFavourite/{id}')
+async def delete_favourite(req: Request,id:str,is_project:bool=False):
+  # user = verify(req.headers.get("Authorization"))
+  # if not user:
+  #   raise HTTPException(status_code=401, detail="Unauthorized")
+  # user_email = user.get("email", None)
+  # if not user_email:
+  #   raise HTTPException(status_code=400, detail="User Email Not Found")
+  user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  query = {}
+  query['user_id'] = fetch_user.get("_id", None)
+  if is_project:
+    query['project_id'] = id
+  else:
+    query['hackathon_id'] = id  
+  try:
+    collection = db["favourites"]
+    collection.delete_one(query)
+    return {"meta":{"status":"success"},"data":{}}
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error Adding Favourite")
+@app.get("/fetchprojects")
+
 @app.get("/")
 def home():
     return {"Let's": "Go"}
