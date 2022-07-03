@@ -71,12 +71,12 @@ def autocomp(q):
     aggregatedresult=skillCollection.aggregate(pipeline)
     for i in list(aggregatedresult):
         count+=1
-        data.append({"name":i["name"] + " " + "Developer"})
+        data.append({"name":i["name"]})
         subskills = i.get("subskills", [])
         for j in subskills:
             if j:
                 count+=1
-                data.append({"name":j + " " + "Developer"})
+                data.append({"name":j})
     result["meta"]={"total":count}
     result["data"]=data
 
