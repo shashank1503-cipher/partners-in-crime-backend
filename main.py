@@ -1,3 +1,4 @@
+import email
 import json
 import pymongo
 from fastapi import FastAPI, HTTPException, Request
@@ -118,12 +119,11 @@ async def add_project(req: Request):
   
 @app.get('/notifications')
 def get_notifications(req: Request,page:int=1,per_page:int=10):
-  # user = verify(req.headers.get("Authorization"))
-  # if not user:
-  #   raise HTTPException(status_code=401, detail="Unauthorized")
-  # user_email = user.get("email", None)
-  user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
-
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  
   if not user_email:
     raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
@@ -149,11 +149,10 @@ def get_notifications(req: Request,page:int=1,per_page:int=10):
 
 @app.put('/notifications/{id}')
 def update_notification(req: Request,id:str):
-  # user = verify(req.headers.get("Authorization"))
-  # if not user:
-  #   raise HTTPException(status_code=401, detail="Unauthorized")
-  # user_email = user.get("email", None)
-  user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
   if not user_email:
     raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
@@ -166,17 +165,14 @@ def update_notification(req: Request,id:str):
     print(e)
     raise HTTPException(status_code=500, detail="Error Updating Notification")
     
-app.include_router(auth.router)
-
 @app.post("/addfavourite")
 async def add_favourite(req: Request):
-  # user = verify(req.headers.get("Authorization"))
-  # if not user:
-  #   raise HTTPException(status_code=401, detail="Unauthorized")
-  # user_email = user.get("email", None)
-  # if not user_email:
-  #   raise HTTPException(status_code=400, detail="User Email Not Found")
-  user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
@@ -199,13 +195,12 @@ async def add_favourite(req: Request):
     raise HTTPException(status_code=500, detail="Error Adding Favourite")
 @app.delete('/deleteFavourite/{id}')
 async def delete_favourite(req: Request,id:str,is_project:bool=False):
-  # user = verify(req.headers.get("Authorization"))
-  # if not user:
-  #   raise HTTPException(status_code=401, detail="Unauthorized")
-  # user_email = user.get("email", None)
-  # if not user_email:
-  #   raise HTTPException(status_code=400, detail="User Email Not Found")
-  user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
@@ -223,6 +218,68 @@ async def delete_favourite(req: Request,id:str,is_project:bool=False):
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Favourite")
 @app.get("/fetchprojects")
+def fetch_projects(req: Request,page:int=1,per_page:int=10):
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_projects = db["projects"].find().sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
+  fetch_count = db["projects"].count_documents({})
+  if not fetch_projects:
+    raise HTTPException(status_code=404, detail="No Projects Found")
+  result = []
+  for i in list(fetch_projects):
+    i['_id'] = str(i['_id'])
+    result.append(i)
+  return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
+@app.get("/project/{id}")
+def fetch_project(req: Request,id:str):
+  if not ObjectId.is_valid(id):
+    raise HTTPException(status_code=400, detail="Invalid Project Id")
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_project = db["projects"].find_one({"_id":ObjectId(id)})
+  if not fetch_project:
+    raise HTTPException(status_code=404, detail="No Project Found")
+  fetch_project['_id'] = str(fetch_project['_id'])
+  return fetch_project
+@app.get("/fetchfavourites")
+def fetch_favourites(req: Request,page:int=1,per_page:int=10):
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_favourites = db["favourites"].find({"user_id":fetch_user.get("_id", None)}).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
+  fetch_count = db["favourites"].count_documents({"user_id":fetch_user.get("_id", None)})
+  if not fetch_favourites:
+    raise HTTPException(status_code=404, detail="No Favourites Found")
+  result = []
+  for i in list(fetch_favourites):
+    i['_id'] = str(i['_id'])
+    result.append(i)
+  return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
+
+
+app.include_router(auth.router)
+
+
 
 @app.get("/")
 def home():
