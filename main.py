@@ -166,7 +166,7 @@ def update_notification(req: Request,id:str):
     print(e)
     raise HTTPException(status_code=500, detail="Error Updating Notification")
     
-# app.include_router(auth.router)
+app.include_router(auth.router)
 
 
 # fetch 
