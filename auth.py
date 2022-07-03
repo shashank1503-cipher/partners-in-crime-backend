@@ -60,3 +60,24 @@ def addUser(data):
         create(db, 'users', data)
     except:
         return {"error": "error adding user."}
+
+
+@router.post('/auth/getUser')
+async def getdata(req: Request):
+    data = await req.body()
+    id = json.loads(data)['g_id']
+    print(id)
+
+
+    user = checkIfUserExists(id)
+    print(user)
+
+    if not user:
+        return {'error': 'error'}
+
+    return {"user": {
+        "name": user['name'],
+        "email": user['email'],
+        'photo': user['photo'],
+        'g_id': user['g_id']
+    }}
