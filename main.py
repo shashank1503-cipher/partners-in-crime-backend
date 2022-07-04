@@ -105,8 +105,18 @@ async def add_project(req: Request):
     data = json.loads(data)
   result['hero_image'] = data.get("image_url", None)
   result['title'] = data.get("title", None)
+  if not result['title']:
+    raise HTTPException(status_code=400, detail="Please Enter Title")
+  result['description'] = data.get("description", None)
+  if not result['description']:
+    raise HTTPException(status_code=400, detail="Please Enter Description")
   result['idea'] = data.get("idea", None)
+  if not result['idea']:
+    raise HTTPException(status_code=400, detail="Please Enter Idea")
   result['required_skills'] = data.get("skills", None)
+  if not result['required_skills']:
+    raise HTTPException(status_code=400, detail="Please Enter Skills")
+  
   try:
     collection = db["projects"]
     fetch_inserted_project = collection.insert_one(result)
@@ -116,7 +126,46 @@ async def add_project(req: Request):
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Project")
-  
+
+@app.get("/fetchprojects")
+def fetch_projects(req: Request,page:int=1,per_page:int=10):
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_projects = db["projects"].find().sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
+  fetch_count = db["projects"].count_documents({})
+  if not fetch_projects:
+    raise HTTPException(status_code=404, detail="No Projects Found")
+  result = []
+  for i in list(fetch_projects):
+    i['_id'] = str(i['_id'])
+    result.append(i)
+  return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
+@app.get("/project/{id}")
+def fetch_project(req: Request,id:str):
+  if not ObjectId.is_valid(id):
+    raise HTTPException(status_code=400, detail="Invalid Project Id")
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_project = db["projects"].find_one({"_id":ObjectId(id)})
+  if not fetch_project:
+    raise HTTPException(status_code=404, detail="No Project Found")
+  fetch_project['_id'] = str(fetch_project['_id'])
+  return fetch_project
+
 @app.get('/notifications')
 def get_notifications(req: Request,page:int=1,per_page:int=10):
   user = verify(req.headers.get("Authorization"))
@@ -217,44 +266,7 @@ async def delete_favourite(req: Request,id:str,is_project:bool=False):
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Favourite")
-@app.get("/fetchprojects")
-def fetch_projects(req: Request,page:int=1,per_page:int=10):
-  user = verify(req.headers.get("Authorization"))
-  if not user:
-    raise HTTPException(status_code=401, detail="Unauthorized")
-  user_email = user.get("email", None)
-  if not user_email:
-    raise HTTPException(status_code=400, detail="User Email Not Found")
-  fetch_user = check_user_exists_using_email(user_email)
-  if not fetch_user:
-    raise HTTPException(status_code=400, detail="User Not Found")
-  fetch_projects = db["projects"].find().sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
-  fetch_count = db["projects"].count_documents({})
-  if not fetch_projects:
-    raise HTTPException(status_code=404, detail="No Projects Found")
-  result = []
-  for i in list(fetch_projects):
-    i['_id'] = str(i['_id'])
-    result.append(i)
-  return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
-@app.get("/project/{id}")
-def fetch_project(req: Request,id:str):
-  if not ObjectId.is_valid(id):
-    raise HTTPException(status_code=400, detail="Invalid Project Id")
-  user = verify(req.headers.get("Authorization"))
-  if not user:
-    raise HTTPException(status_code=401, detail="Unauthorized")
-  user_email = user.get("email", None)
-  if not user_email:
-    raise HTTPException(status_code=400, detail="User Email Not Found")
-  fetch_user = check_user_exists_using_email(user_email)
-  if not fetch_user:
-    raise HTTPException(status_code=400, detail="User Not Found")
-  fetch_project = db["projects"].find_one({"_id":ObjectId(id)})
-  if not fetch_project:
-    raise HTTPException(status_code=404, detail="No Project Found")
-  fetch_project['_id'] = str(fetch_project['_id'])
-  return fetch_project
+
 @app.get("/fetchfavourites")
 def fetch_favourites(req: Request,page:int=1,per_page:int=10):
   user = verify(req.headers.get("Authorization"))
