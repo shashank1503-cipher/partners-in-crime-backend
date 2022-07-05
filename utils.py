@@ -9,7 +9,7 @@ def check_user_exists_using_email(email):
     return None
 def create_notification(user_id, title,description,type):
     notification = {
-        "user_id": user_id,
+        "user_id": ObjectId(user_id),
         "title": title,
         'description': description,
         'type': type,
