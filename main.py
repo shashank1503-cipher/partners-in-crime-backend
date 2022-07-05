@@ -384,7 +384,39 @@ def fetch_favourites(req: Request,page:int=1,per_page:int=10):
     result.append(i)
   return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
 
-
+#FETCH
+# fetch 
+@app.get('/search')
+def findkey(req: Request,q):
+  count=db.users.count_documents({"name": q})
+  cursor = db.users.find({"name": q})
+  res={}
+  res["meta"]={}
+  res["data"]=[]
+  for i in list(cursor):
+    i["_id"]=str(i["_id"])
+    res["data"].append(i)
+  res["meta"]={"count":count}
+  cursor = db.skills.find_one({"name": q})
+  if(cursor):
+    main_skill=cursor["name"]
+    sub_skills=cursor["subskills"]
+    fetch_main_profile=db.users.find({"skills":{"$regex":main_skill,"$options":"i"}})
+    for i in list(fetch_main_profile):
+      i["_id"]=str(i["_id"])
+      res["data"].append(i)
+    for sub_skill in sub_skills:
+      fetch_sub_profile=db.users.find({"skills":{"$regex":sub_skill,"$options":"i"}})
+      for i in list(fetch_sub_profile):
+        i["_id"]=str(i["_id"])
+        res["data"].append(i) 
+  else:
+    fetch_query=db.users.find({"skills":{"$regex":q,"$options":"i"}})
+    for i in list(fetch_query):
+      i["_id"]=str(i["_id"])
+      res["data"].append(i)
+    res["meta"]={"count":count}
+  return res
 app.include_router(auth.router)
 
 
