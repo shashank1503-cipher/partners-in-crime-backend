@@ -1,6 +1,7 @@
 from typing import Union
 from fastapi import  Header, APIRouter, Request
 from google.oauth2 import id_token
+from firebase_admin import auth
 from google.auth.transport import requests
 from pydantic import BaseModel
 import json
@@ -8,13 +9,20 @@ from db import db, read_one, create
 
 router = APIRouter()
 
-def verify(authorization):
-    auth_token = authorization.split(" ")[1]
+async def verify(authorization):
+   
+    print(authorization)
     try:
-        user = id_token.verify_firebase_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
-        print(user)
+        id_token = authorization.split(" ")[1]
+        # print(auth_token)
+        # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
+        user = await auth.verify_id_token(id_token)
+        # print("---------------------------------------")
+        # print("USER : ", user['uid'])
+        # print("---------------------------------------")
         return True
-    except:
+    except Exception:
+        print(Exception)
         return False
 
 
@@ -68,6 +76,10 @@ async def getdata(req: Request):
     id = json.loads(data)['g_id']
     print(id)
 
+    if verify(req.headers["authorization"]):
+        print("YES")
+    else:
+        return {"error": "Not Authorized"}
 
     user = checkIfUserExists(id)
     print(user)

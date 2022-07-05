@@ -22,8 +22,6 @@ origins = [
     "http://localhost:3000",
 ]
 
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -292,7 +290,6 @@ def fetch_favourites(req: Request,page:int=1,per_page:int=10):
 
 
 app.include_router(auth.router)
-
 
 
 @app.get("/")
