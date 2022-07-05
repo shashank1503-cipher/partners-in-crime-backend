@@ -12,7 +12,7 @@ import auth
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth import verify
-from utils import check_user_exists_using_email
+from utils import check_user_exists_using_email, create_notification
 client = pymongo.MongoClient("mongodb+srv://partnersInCrime:partners123@cluster0.grt0lph.mongodb.net/?retryWrites=true&w=majority")
 db = client["partnersInCrime"]
 app = FastAPI()
@@ -29,6 +29,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+"""
+------------------------------------------------------------------------
+Search Section
+------------------------------------------------------------------------
+"""
+
+
+
 @app.get("/suggestions")
 def autocomp(q):
     pipeline = [
@@ -82,6 +93,14 @@ def autocomp(q):
 
     return result
 
+"""
+------------------------------------------------------------------------
+Project Section
+------------------------------------------------------------------------
+"""
+
+
+
 @app.post("/addproject")
 async def add_project(req: Request):
   
@@ -96,7 +115,7 @@ async def add_project(req: Request):
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
   result = {}
-
+  result['user_id'] = str(fetch_user['_id'])
   result['name'] = fetch_user.get("name", None)
   result['email'] = fetch_user.get("email", None)
   result ['image'] = fetch_user.get("photo", None)  
@@ -166,6 +185,17 @@ def fetch_project(req: Request,id:str):
   fetch_project['_id'] = str(fetch_project['_id'])
   return fetch_project
 
+
+"""
+------------------------------------------------------------------------
+Notification Section
+------------------------------------------------------------------------
+"""
+
+
+
+
+
 @app.get('/notifications')
 def get_notifications(req: Request,page:int=1,per_page:int=10):
   user = verify(req.headers.get("Authorization"))
@@ -214,6 +244,15 @@ def update_notification(req: Request,id:str):
     print(e)
     raise HTTPException(status_code=500, detail="Error Updating Notification")
     
+
+
+"""
+------------------------------------------------------------------------
+Favourites Section
+------------------------------------------------------------------------
+"""
+
+
 @app.post("/addfavourite")
 async def add_favourite(req: Request):
   user = verify(req.headers.get("Authorization"))
@@ -238,10 +277,30 @@ async def add_favourite(req: Request):
     fid = str(fetch_inserted_project.inserted_id)
     result.pop("_id")
     result.pop("user_id")
-    return {"meta":{"inserted_id":fid},"data":result}
+    
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Favourite")
+  if result['project_id']:
+    try:
+      db['projects'].update_one({"_id":ObjectId(result['project_id'])},{"$inc":{"interested":1}})
+    except Exception as e:
+      print(e)
+      raise HTTPException(status_code=500, detail="Error Updating Project")
+    try:
+      print("Sending Notification")
+      fetch_project = db["projects"].find_one({"_id":ObjectId(result['project_id'])})
+      fetch_project_handler_id = fetch_project.get("user_id", None)
+      if fetch_project_handler_id:
+        print("Actually Executing")
+        person_interested = fetch_user.get("name", None)
+        title = fetch_project.get("title", None)
+        description = person_interested + " has interested in your project " + title
+        create_notification(fetch_project_handler_id,'Your Project Got Some Interested',description,'Interest')
+    except Exception as e:
+      print(e)
+      raise HTTPException(status_code=500, detail="Error Creating Notification")
+  return {"meta":{"inserted_id":fid},"data":result}
 @app.delete('/deleteFavourite/{id}')
 async def delete_favourite(req: Request,id:str,is_project:bool=False):
   user = verify(req.headers.get("Authorization"))
@@ -266,6 +325,7 @@ async def delete_favourite(req: Request,id:str,is_project:bool=False):
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Favourite")
+
 
 @app.get("/fetchfavourites")
 def fetch_favourites(req: Request,page:int=1,per_page:int=10):

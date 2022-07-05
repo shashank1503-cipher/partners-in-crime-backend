@@ -17,22 +17,3 @@ def create_notification(user_id, title,description,type):
         'is_read': False
     }
     create(db, "notifications", notification)
-
-notification =  [
-    {
-      'title': 'MLH Hackathon Invitation',
-      'description':
-        'Bla Bla has invited you to participated in the MLH Hackathon.',
-      "type": 'Invitation',
-    },
-    {
-      "title": 'New Message',
-      'description': 'Bla Bla has sent you a message',
-      "type": 'Message',
-    },
-  ]
-
-user_id = ObjectId("62be89a9df9fa5b672b8961f")
-for i in notification:
-
-    create_notification(user_id, i['title'], i['description'], i['type'])
