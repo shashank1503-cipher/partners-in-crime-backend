@@ -178,6 +178,39 @@ async def add_project(req: Request):
     raise HTTPException(status_code=500, detail="Error Adding Project")
 
 @app.get("/fetchprojects")
+def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
+  user = verify(req.headers.get("Authorization"))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  query = {}
+  if q:
+    query["title"] = {"$regex":q,"$options":"i"}
+  fetch_projects = db["projects"].find(query).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
+  fetch_count = db["projects"].count_documents(query)
+  if not fetch_projects:
+    raise HTTPException(status_code=404, detail="No Projects Found")
+  result = []
+  for i in list(fetch_projects):
+    i['_id'] = str(i['_id'])
+    fetch_user_id = i.get("user_id", None)
+    if fetch_user_id:
+      i['user_id'] = str(i['user_id'])
+    count_interested = db['projects'].count_documents({"_id":ObjectId(i['_id']),"interested_users":ObjectId(fetch_user_id)})
+    if count_interested:
+      i['interested'] = True
+    if i.get("interested_users"):
+      i.pop("interested_users")
+    result.append(i)
+
+  return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
+
+@app.get("/fetchuserprojects")
 def fetch_projects(req: Request,page:int=1,per_page:int=10):
   user = verify(req.headers.get("Authorization"))
   if not user:
@@ -188,7 +221,8 @@ def fetch_projects(req: Request,page:int=1,per_page:int=10):
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
-  fetch_projects = db["projects"].find().sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
+  fetch_user_id = fetch_user.get("_id", None)
+  fetch_projects = db["projects"].find({"user_id":ObjectId(fetch_user_id)}).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
   fetch_count = db["projects"].count_documents({})
   if not fetch_projects:
     raise HTTPException(status_code=404, detail="No Projects Found")
@@ -198,8 +232,16 @@ def fetch_projects(req: Request,page:int=1,per_page:int=10):
     fetch_user_id = i.get("user_id", None)
     if fetch_user_id:
       i['user_id'] = str(i['user_id'])
+    count_interested = db['projects'].count_documents({"_id":ObjectId(i['_id']),"interested_users":ObjectId(fetch_user_id)})
+    if count_interested:
+      i['interested'] = True
+    if i.get("interested_users"):
+      i.pop("interested_users")
     result.append(i)
+
   return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
+
+
 @app.get("/project/{id}")
 def fetch_project(req: Request,id:str):
   if not ObjectId.is_valid(id):
@@ -217,14 +259,23 @@ def fetch_project(req: Request,id:str):
   if not fetch_project:
     raise HTTPException(status_code=404, detail="No Project Found")
   fetch_project['_id'] = str(fetch_project['_id'])
+  fetch_project['user_id'] = str(fetch_project['user_id'])
+  fetch_interested_users = fetch_project['interested_users']
+  if fetch_interested_users:
+    fetch_interested_users = [str(i) for i in fetch_interested_users]
+    fetch_project['interested_users'] = fetch_interested_users
+  
   return fetch_project
-
 
 """
 ------------------------------------------------------------------------
 Notification Section
 ------------------------------------------------------------------------
 """
+
+
+
+
 
 
 
@@ -307,6 +358,18 @@ async def add_favourite(req: Request):
   result['user_id'] = fetch_user.get("_id", None)
   result['hackathon_id'] = data.get("hackathon_id", None)
   result['project_id'] = data.get("project_id", None)
+  if result['hackathon_id']:
+    result['hackathon_details'] = {
+      "name": data.get("name",None),
+      "image": data.get("image",None),
+      "heroImage": data.get("heroImage",None),
+      "website": data.get("website",None),
+      "url": data.get("url",None),
+      "location": data.get("location",None),
+      "start": data.get("start",None),
+      "end": data.get("end",None),
+      "mode": data.get("mode",None)
+      }
   try:
     collection = db["favourites"]
     fetch_inserted_project = collection.insert_one(result)
@@ -320,15 +383,17 @@ async def add_favourite(req: Request):
   if result['project_id']:
     try:
       db['projects'].update_one({"_id":ObjectId(result['project_id'])},{"$inc":{"interested":1}})
+      print("Adding Interested User")
+      db['projects'].update_one({"_id":ObjectId(result['project_id'])},{"$push":{"interested_users":ObjectId(fetch_user.get("_id", None))}})
     except Exception as e:
-      print(e)
+      print("Error",e)
       raise HTTPException(status_code=500, detail="Error Updating Project")
     try:
-      print("Sending Notification")
+      
       fetch_project = db["projects"].find_one({"_id":ObjectId(result['project_id'])})
       fetch_project_handler_id = fetch_project.get("user_id", None)
       if fetch_project_handler_id:
-        print("Actually Executing")
+        
         person_interested = fetch_user.get("name", None)
         title = fetch_project.get("title", None)
         description = person_interested + " has interested in your project " + title
@@ -357,14 +422,17 @@ async def delete_favourite(req: Request,id:str,is_project:bool=False):
   try:
     collection = db["favourites"]
     collection.delete_one(query)
+    if is_project:
+      db["projects"].update_one({"_id":ObjectId(id)},{"$inc":{"interested":-1}})
+      db["projects"].update_one({"_id":ObjectId(id)},{"$pull":{"interested_users":fetch_user.get("_id", None)}})
     return {"meta":{"status":"success"},"data":{}}
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Favourite")
 
 
-@app.get("/fetchfavourites")
-def fetch_favourites(req: Request,page:int=1,per_page:int=10):
+@app.get("/fetchuserhackathons")
+def fetch_favourite_hackathons(req: Request,page:int=1,per_page:int=10):
   user = verify(req.headers.get("Authorization"))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
@@ -374,15 +442,19 @@ def fetch_favourites(req: Request,page:int=1,per_page:int=10):
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
-  fetch_favourites = db["favourites"].find({"user_id":fetch_user.get("_id", None)}).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
-  fetch_count = db["favourites"].count_documents({"user_id":fetch_user.get("_id", None)})
-  if not fetch_favourites:
-    raise HTTPException(status_code=404, detail="No Favourites Found")
+  fetch_user_id = fetch_user.get("_id", None)
+  fetch_hackathons = db["favourites"].find({"user_id":ObjectId(fetch_user_id),"project_id":None,"hackathon_details":{"$exists":True}}).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
+  fetch_count = db["favourites"].count_documents({"user_id":ObjectId(fetch_user_id),"project_id":None,"hackathon_details":{"$exists":True}})
+  if not fetch_hackathons:
+    raise HTTPException(status_code=404, detail="No Hackathons Found")
   result = []
-  for i in list(fetch_favourites):
+  for i in list(fetch_hackathons):
     i['_id'] = str(i['_id'])
+    i['hackathon_id'] = str(i['hackathon_id'])
+    i['user_id'] = str(i['user_id'])
     result.append(i)
   return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
+
 
 #FETCH
 # fetch 
