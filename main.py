@@ -491,8 +491,8 @@ Profile Page
 
 
 @app.get('/fetchuserprofile')
-async def fetchuserdetails(req: Request):
-  user = verify(req.headers.get("Authorization"))
+def fetchuserdetails(req: Request):
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
@@ -508,8 +508,8 @@ async def fetchuserdetails(req: Request):
   return fetch_user
 
 @app.get('/fetchuserpic')
-async def fetchuserpic(req: Request):
-  user = verify(req.headers.get("Authorization"))
+def fetchuserpic(req: Request):
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
@@ -524,8 +524,19 @@ async def fetchuserpic(req: Request):
 
 @app.put('/updateuserpic')
 async def updateuserpic(req: Request):
-  user = verify(req.headers.get("Authorization"))
-  
+  user = None
+  authorization  = req.headers.get("Authorization")
+  try:
+        id_token = authorization.split(" ")[1]
+        # print(auth_token)
+        # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
+        user = admin_auth.verify_id_token(id_token)
+        
+        # print("---------------------------------------")
+        # print("USER : ", user)
+        # print("---------------------------------------")
+  except Exception as e:
+        print(e)
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -549,8 +560,19 @@ async def updateuserpic(req: Request):
   
 @app.put('/updateuserprofile')
 async def updateuserpic(req: Request):
-  user = verify(req.headers.get("Authorization"))
-  
+  user = None
+  authorization  = req.headers.get("Authorization")
+  try:
+        id_token = authorization.split(" ")[1]
+        # print(auth_token)
+        # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
+        user = admin_auth.verify_id_token(id_token)
+        
+        # print("---------------------------------------")
+        # print("USER : ", user)
+        # print("---------------------------------------")
+  except Exception as e:
+        print(e)
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
