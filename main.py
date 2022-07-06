@@ -188,7 +188,7 @@ def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
-  query = {}
+  query = {"user_id":{"$ne":ObjectId(fetch_user['_id'])}}
   if q:
     query["title"] = {"$regex":q,"$options":"i"}
   fetch_projects = db["projects"].find(query).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
