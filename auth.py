@@ -1,28 +1,33 @@
 from typing import Union
 from fastapi import  Header, APIRouter, Request
 from google.oauth2 import id_token
-from firebase_admin import auth
+import firebase_admin
+from firebase_admin import auth, credentials
 from google.auth.transport import requests
 from pydantic import BaseModel
 import json
 from db import db, read_one, create
 
 router = APIRouter()
+cred = credentials.Certificate("partners-in-crime-38309-firebase-adminsdk-q3sfa-52f5da4144.json")
+firebase_admin.initialize_app(cred)
 
 async def verify(authorization):
    
-    print(authorization)
+    # print(authorization)
     try:
         id_token = authorization.split(" ")[1]
         # print(auth_token)
         # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
-        user = await auth.verify_id_token(id_token)
+        user = auth.verify_id_token(id_token)
+        
         # print("---------------------------------------")
-        # print("USER : ", user['uid'])
+        # print("USER : ", user)
         # print("---------------------------------------")
-        return True
-    except Exception:
-        print(Exception)
+        
+        return user
+    except Exception as e:
+        print(e)
         return False
 
 
