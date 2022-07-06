@@ -492,7 +492,6 @@ def findkey(req: Request,q):
 app.include_router(auth.router)
 
 
-
 @app.get("/")
 def home():
     return {"Let's": "Go"}
