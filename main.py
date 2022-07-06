@@ -456,6 +456,98 @@ def fetch_favourite_hackathons(req: Request,page:int=1,per_page:int=10):
   return {'meta':{'total_records':fetch_count,'page':page,'per_page':per_page}, 'data':result}
 
 
+
+"""
+------------------------------------------------------------------------
+Profile Page
+------------------------------------------------------------------------
+"""
+
+
+
+@app.get('/fetchuserprofile')
+async def fetchuserdetails(req: Request):
+  user = verify(req.headers.get("Authorization"))
+  
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  del fetch_user['_id']
+  del fetch_user['g_id']
+ 
+  return fetch_user
+
+@app.get('/fetchuserpic')
+async def fetchuserpic(req: Request):
+  user = verify(req.headers.get("Authorization"))
+  
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+ 
+  return {"photo": fetch_user["photo"]}
+
+@app.put('/updateuserpic')
+async def updateuserpic(req: Request):
+  user = verify(req.headers.get("Authorization"))
+  
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  
+  userId = fetch_user['_id']
+  data = await req.body()
+  data = json.loads(data)
+  
+  try: 
+    if data:
+      db["users"].update_one({"_id":ObjectId(userId)},{"$set": data})
+    return {"meta":{"status" : True}}
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error Updating Profile")
+  
+@app.put('/updateuserprofile')
+async def updateuserpic(req: Request):
+  user = verify(req.headers.get("Authorization"))
+  
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  
+  userId = fetch_user['_id']
+  data = await req.body()
+  data = json.loads(data)
+  
+  try: 
+    if data:
+      db["users"].update_one({"_id":ObjectId(userId)},{"$set": data})
+    return {"meta":{"status" : True}}
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error Updating Profile")
+
+
 #FETCH
 # fetch 
 @app.get('/search')
