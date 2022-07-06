@@ -1,3 +1,4 @@
+import asyncio
 import email
 import json
 import pymongo
@@ -6,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from bson import ObjectId
 import auth
+from firebase_admin import auth as admin_auth
 
 
 # from .db import read, read_one, create, update, delete 
@@ -39,9 +41,8 @@ Main Page
 
 
 @app.get('/firsttimelogin')
-async def first_time_login(req: Request):
-  user = verify(req.headers.get("Authorization"))
-  
+def first_time_login(req: Request):
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -132,9 +133,19 @@ Project Section
 
 @app.post("/addproject")
 async def add_project(req: Request):
-  
-  user = verify(req.headers.get("Authorization"))
-  
+  user = None
+  authorization  = req.headers.get("Authorization")
+  try:
+        id_token = authorization.split(" ")[1]
+        # print(auth_token)
+        # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
+        user = admin_auth.verify_id_token(id_token)
+        
+        # print("---------------------------------------")
+        # print("USER : ", user)
+        # print("---------------------------------------")
+  except Exception as e:
+        print(e)
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -179,10 +190,11 @@ async def add_project(req: Request):
 
 @app.get("/fetchprojects")
 def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
-  user = verify(req.headers.get("Authorization"))
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
+  # user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
   if not user_email:
     raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
@@ -212,7 +224,7 @@ def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
 
 @app.get("/fetchuserprojects")
 def fetch_projects(req: Request,page:int=1,per_page:int=10):
-  user = verify(req.headers.get("Authorization"))
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -246,7 +258,7 @@ def fetch_projects(req: Request,page:int=1,per_page:int=10):
 def fetch_project(req: Request,id:str):
   if not ObjectId.is_valid(id):
     raise HTTPException(status_code=400, detail="Invalid Project Id")
-  user = verify(req.headers.get("Authorization"))
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -284,7 +296,7 @@ Notification Section
 @app.get('/notifications')
 def get_notifications(req: Request,page:int=1,per_page:int=10):
   # print(req.headers.get("Authorization"))
-  user = verify(req.headers.get("Authorization"))
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -316,7 +328,7 @@ def get_notifications(req: Request,page:int=1,per_page:int=10):
 
 @app.get('/isNewnotification')
 def is_new_notification(req: Request):
-  user = verify(req.headers.get("Authorization"))
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -342,7 +354,20 @@ Favourites Section
 
 @app.post("/addfavourite")
 async def add_favourite(req: Request):
-  user = verify(req.headers.get("Authorization"))
+  user = None
+  authorization  = req.headers.get("Authorization")
+  try:
+        id_token = authorization.split(" ")[1]
+        # print(auth_token)
+        # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
+        user = admin_auth.verify_id_token(id_token)
+        
+        # print("---------------------------------------")
+        # print("USER : ", user)
+        # print("---------------------------------------")
+  except Exception as e:
+        print(e)
+
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -403,8 +428,8 @@ async def add_favourite(req: Request):
       raise HTTPException(status_code=500, detail="Error Creating Notification")
   return {"meta":{"inserted_id":fid},"data":result}
 @app.delete('/deleteFavourite/{id}')
-async def delete_favourite(req: Request,id:str,is_project:bool=False):
-  user = verify(req.headers.get("Authorization"))
+def delete_favourite(req: Request,id:str,is_project:bool=False):
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -433,7 +458,7 @@ async def delete_favourite(req: Request,id:str,is_project:bool=False):
 
 @app.get("/fetchuserhackathons")
 def fetch_favourite_hackathons(req: Request,page:int=1,per_page:int=10):
-  user = verify(req.headers.get("Authorization"))
+  user = asyncio.run(verify(req.headers.get("Authorization")))
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
