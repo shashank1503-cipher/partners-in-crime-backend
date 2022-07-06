@@ -1,6 +1,8 @@
+import asyncio
 from datetime import datetime
 from db import create, read_one,db
 from bson import ObjectId
+from firebase_admin import auth
 
 def check_user_exists_using_email(email):
     user = read_one(db,"users", {"email": email})
