@@ -1,15 +1,13 @@
-from typing import Union
-from fastapi import  Header, APIRouter, Request
-from google.oauth2 import id_token
+import os
+from fastapi import  APIRouter, Request
 import firebase_admin
 from firebase_admin import auth, credentials
-from google.auth.transport import requests
-from pydantic import BaseModel
 import json
 from db import db, read_one, create
 
 router = APIRouter()
-cred = credentials.Certificate("partners-in-crime-38309-firebase-adminsdk-q3sfa-52f5da4144.json")
+credentials_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+cred = credentials.Certificate(credentials_json)
 firebase_admin.initialize_app(cred)
 
 async def verify(authorization):
