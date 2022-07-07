@@ -1,11 +1,7 @@
 import os
-from typing import Union
-from fastapi import  Header, APIRouter, Request
-from google.oauth2 import id_token
+from fastapi import  APIRouter, Request
 import firebase_admin
 from firebase_admin import auth, credentials
-from google.auth.transport import requests
-from pydantic import BaseModel
 import json
 from db import db, read_one, create
 

@@ -1,10 +1,8 @@
 import asyncio
-import email
 import json
 import pymongo
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 from bson import ObjectId
 import auth
 from firebase_admin import auth as admin_auth
