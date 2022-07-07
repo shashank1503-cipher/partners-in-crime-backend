@@ -638,8 +638,8 @@ async def updateuserpic(req: Request):
 # fetch 
 @app.get('/search')
 def findkey(req: Request,q):
-  count=db.users.count_documents({"name": q})
-  cursor = db.users.find({"name": q})
+  count=db.users.count_documents({"name": {"$regex":q,"$options":"i"}})
+  cursor = db.users.find({"name": {"$regex":q,"$options":"i"}})
   res={}
   res["meta"]={}
   res["data"]=[]
@@ -647,7 +647,7 @@ def findkey(req: Request,q):
     i["_id"]=str(i["_id"])
     res["data"].append(i)
   res["meta"]={"count":count}
-  cursor = db.skills.find_one({"name": q})
+  cursor = db.skills.find_one({"name": {"$regex":q,"$options":"i"}})
   if(cursor):
     main_skill=cursor["name"]
     sub_skills=cursor["subskills"]
