@@ -640,7 +640,7 @@ def getUserDataForChat(req: Request, skip=0):
   # if (skip+10) > count:
   #   return {'error': 'lomit excedeed'}
 
-  data = db.users.find().skip(skip).limit(10)
+  data = db.users.find().skip(int(skip)).limit(10)
   docs = list()
 
   for doc in list(data):
