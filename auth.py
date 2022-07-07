@@ -1,3 +1,4 @@
+import os
 from typing import Union
 from fastapi import  Header, APIRouter, Request
 from google.oauth2 import id_token
@@ -9,7 +10,24 @@ import json
 from db import db, read_one, create
 
 router = APIRouter()
-cred = credentials.Certificate("partners-in-crime-38309-firebase-adminsdk-q3sfa-52f5da4144.json")
+FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID')
+FIREBASE_PRIVATE_KEY_ID = os.environ.get('FIREBASE_PRIVATE_KEY_ID')
+FIREBASE_PRIVATE_KEY = os.environ.get('FIREBASE_PRIVATE_KEY')
+CLIENT_EMAIL = os.environ.get('CLIENT_EMAIL')
+FIREBASE_CLIENT_ID = os.environ.get('FIREBASE_CLIENT_ID')
+cred_json = {
+  "type": "service_account",
+  "project_id": FIREBASE_PROJECT_ID,
+  "private_key_id": FIREBASE_PRIVATE_KEY_ID,
+  "private_key": FIREBASE_PRIVATE_KEY,
+  "client_email": CLIENT_EMAIL,
+  "client_id": FIREBASE_CLIENT_ID,
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-q3sfa%40partners-in-crime-38309.iam.gserviceaccount.com"
+}
+cred = credentials.Certificate(cred_json)
 firebase_admin.initialize_app(cred)
 
 async def verify(authorization):

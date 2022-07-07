@@ -1,7 +1,9 @@
 import pymongo
 from bson.objectid import ObjectId
 
-client = pymongo.MongoClient("mongodb+srv://partnersInCrime:partners123@cluster0.grt0lph.mongodb.net/?retryWrites=true&w=majority")
+import os
+MONGO_URI = os.environ.get('MONGO_URI')
+client = pymongo.MongoClient(MONGO_URI)
 db = client["partnersInCrime"]
 def read(db, collection, query):
     return db[collection].find(query)

@@ -9,13 +9,14 @@ from bson import ObjectId
 import auth
 from firebase_admin import auth as admin_auth
 
-
+import os
 # from .db import read, read_one, create, update, delete 
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth import verify
 from utils import check_user_exist_using_id, check_user_exists_using_email, create_notification
-client = pymongo.MongoClient("mongodb+srv://partnersInCrime:partners123@cluster0.grt0lph.mongodb.net/?retryWrites=true&w=majority")
+MONGO_URI = os.environ.get('MONGO_URI')
+client = pymongo.MongoClient(MONGO_URI)
 db = client["partnersInCrime"]
 app = FastAPI()
 
