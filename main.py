@@ -21,7 +21,8 @@ app = FastAPI()
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "https://partners-in-crime.vercel.app/"
+    "https://partners-in-crime.vercel.app/",
+    "https://partners-in-crime-backend.herokuapp.com"
 ]
 
 app.add_middleware(
