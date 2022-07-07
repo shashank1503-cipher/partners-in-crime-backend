@@ -11,6 +11,7 @@ FIREBASE_PRIVATE_KEY_ID = os.environ.get('FIREBASE_PRIVATE_KEY_ID')
 FIREBASE_PRIVATE_KEY = os.environ.get('FIREBASE_PRIVATE_KEY')
 CLIENT_EMAIL = os.environ.get('CLIENT_EMAIL')
 FIREBASE_CLIENT_ID = os.environ.get('FIREBASE_CLIENT_ID')
+print(FIREBASE_PRIVATE_KEY)
 cred_json = {
   "type": "service_account",
   "project_id": FIREBASE_PROJECT_ID,
