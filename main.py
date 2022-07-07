@@ -100,6 +100,7 @@ def autocomp(q):
     data=[]
     for i in list(aggregatedresult):
         count+=1
+        print(i)
         data.append({"name":i["name"]})
     skillCollection = db['skills']
     pipeline[-1] = {
@@ -647,6 +648,33 @@ def findkey(req: Request,q):
   res["data"] = [hashmap[k] for k in hashmap]
   return res
 app.include_router(auth.router)
+
+
+# CHAT PAGE INFINITE SCROLL
+@app.get('/users/data')
+def getUserDataForChat(req: Request, skip=0):
+  count=db.users.count_documents({})
+  print(count)
+  # if (skip+10) > count:
+  #   return {'error': 'lomit excedeed'}
+
+  data = db.users.find().skip(skip).limit(10)
+  docs = list()
+
+  for doc in list(data):
+    if 'g_id' not in doc:
+      pass
+    else:
+      print(doc['g_id'])
+      cur_doc = {}
+      cur_doc['name'] = doc['name']
+      cur_doc['g_id'] = doc['g_id']
+      cur_doc['photo'] = doc['photo']
+      docs.append(cur_doc)
+
+
+  return {"data":docs}
+
 
 
 @app.get("/")
