@@ -6,24 +6,7 @@ import json
 from db import db, read_one, create
 
 router = APIRouter()
-FIREBASE_PROJECT_ID = str(os.environ.get('FIREBASE_PROJECT_ID'))
-FIREBASE_PRIVATE_KEY_ID = str(os.environ.get('FIREBASE_PRIVATE_KEY_ID'))
-FIREBASE_PRIVATE_KEY = str(os.environ.get('FIREBASE_PRIVATE_KEY'))
-CLIENT_EMAIL = str(os.environ.get('CLIENT_EMAIL'))
-FIREBASE_CLIENT_ID = str(os.environ.get('FIREBASE_CLIENT_ID'))
-
-cred_json = {
-  "type": "service_account",
-  "project_id": FIREBASE_PROJECT_ID,
-  "private_key_id": FIREBASE_PRIVATE_KEY_ID,
-  "private_key": FIREBASE_PRIVATE_KEY,
-  "client_email": CLIENT_EMAIL,
-  "client_id": FIREBASE_CLIENT_ID,
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-q3sfa%40partners-in-crime-38309.iam.gserviceaccount.com"
-}
+cred_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 cred = credentials.Certificate(cred_json)
 firebase_admin.initialize_app(cred)
 
