@@ -124,6 +124,30 @@ def autocomp(q):
 
     return result
 
+
+@app.get("/profile/{id}")
+def get_profile(req:Request,id):
+  if not ObjectId.is_valid(id):
+    raise HTTPException(status_code=400, detail="Invalid Project Id")
+  user = asyncio.run(verify(req.headers.get("Authorization")))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_profile = db['users'].find_one({"_id": ObjectId(id)})
+  fetch_profile['_id'] = str(fetch_profile['_id'])
+  if not fetch_profile:
+    raise HTTPException(status_code=400, detail="Profile Not Found")
+  result = {}
+  result['meta'] = {'profile_id': str(fetch_profile['_id'])}
+  result["data"] = fetch_profile
+  return result
+
+
 """
 ------------------------------------------------------------------------
 Project Section
@@ -195,14 +219,13 @@ def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
-  # user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
   if not user_email:
     raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
-  # query = {"user_id":{"$ne":ObjectId(fetch_user['_id'])}}
-  query = {}
+  query = {"user_id":{"$ne":ObjectId(fetch_user['_id'])}}
+  
   if q:
     query["title"] = {"$regex":q,"$options":"i"}
   fetch_projects = db["projects"].find(query).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
@@ -286,6 +309,7 @@ def fetch_project(req: Request,id:str):
       if fetch_user_details:
         fetch_user_details['_id'] = str(fetch_user_details['_id'])
         interseted_users.append(fetch_user_details)
+  fetch_project['g_id'] = fetch_user.get("g_id", None)
   fetch_project['interested_users'] = interseted_users
   fetch_project['is_user_interested'] = is_user_interested
   res = {}
