@@ -310,7 +310,9 @@ def fetch_project(req: Request,id:str):
       if fetch_user_details:
         fetch_user_details['_id'] = str(fetch_user_details['_id'])
         interseted_users.append(fetch_user_details)
-  fetch_project['g_id'] = fetch_user.get("g_id", None)
+  fetch_handler = db['users'].find_one({"_id":ObjectId(fetch_project['user_id'])})
+
+  fetch_project['g_id'] = fetch_handler.get("g_id", None)
   fetch_project['interested_users'] = interseted_users
   fetch_project['is_user_interested'] = is_user_interested
   res = {}
