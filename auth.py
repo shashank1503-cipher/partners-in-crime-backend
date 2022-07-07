@@ -6,8 +6,8 @@ import json
 from db import db, read_one, create
 
 router = APIRouter()
-cred_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
-cred = credentials.Certificate(cred_json)
+credentials_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+cred = credentials.Certificate(credentials_json)
 firebase_admin.initialize_app(cred)
 
 async def verify(authorization):
