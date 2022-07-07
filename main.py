@@ -1,27 +1,28 @@
 import asyncio
-import email
 import json
 import pymongo
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 from bson import ObjectId
 import auth
 from firebase_admin import auth as admin_auth
 
-
+import os
 # from .db import read, read_one, create, update, delete 
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth import verify
-from utils import check_user_exists_using_email, create_notification
-client = pymongo.MongoClient("mongodb+srv://partnersInCrime:partners123@cluster0.grt0lph.mongodb.net/?retryWrites=true&w=majority")
+from utils import check_user_exist_using_id, check_user_exists_using_email, create_notification
+MONGO_URI = os.environ.get('MONGO_URI')
+client = pymongo.MongoClient(MONGO_URI)
 db = client["partnersInCrime"]
 app = FastAPI()
 
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "https://partners-in-crime.vercel.app",
+    "https://partners-in-crime-backend.herokuapp.com"
 ]
 
 app.add_middleware(
@@ -124,6 +125,30 @@ def autocomp(q):
 
     return result
 
+
+@app.get("/profile/{id}")
+def get_profile(req:Request,id):
+  if not ObjectId.is_valid(id):
+    raise HTTPException(status_code=400, detail="Invalid Project Id")
+  user = asyncio.run(verify(req.headers.get("Authorization")))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_profile = db['users'].find_one({"_id": ObjectId(id)})
+  fetch_profile['_id'] = str(fetch_profile['_id'])
+  if not fetch_profile:
+    raise HTTPException(status_code=400, detail="Profile Not Found")
+  result = {}
+  result['meta'] = {'profile_id': str(fetch_profile['_id'])}
+  result["data"] = fetch_profile
+  return result
+
+
 """
 ------------------------------------------------------------------------
 Project Section
@@ -195,13 +220,13 @@ def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
-  # user_email = "shashankkumar20bcs15@iiitkottayam.ac.in"
   if not user_email:
     raise HTTPException(status_code=400, detail="User Email Not Found")
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
   query = {"user_id":{"$ne":ObjectId(fetch_user['_id'])}}
+  
   if q:
     query["title"] = {"$regex":q,"$options":"i"}
   fetch_projects = db["projects"].find(query).sort("created_at",-1).skip((page-1)*per_page).limit(per_page)
@@ -274,11 +299,24 @@ def fetch_project(req: Request,id:str):
   fetch_project['_id'] = str(fetch_project['_id'])
   fetch_project['user_id'] = str(fetch_project['user_id'])
   fetch_interested_users = fetch_project['interested_users']
+  interseted_users = []
+  is_user_interested = False
   if fetch_interested_users:
-    fetch_interested_users = [str(i) for i in fetch_interested_users]
-    fetch_project['interested_users'] = fetch_interested_users
-  
-  return fetch_project
+    for i in fetch_interested_users:
+      user_id = fetch_user.get("_id", None)
+      if ObjectId(user_id) == ObjectId(i):
+        is_user_interested = True
+      fetch_user_details = check_user_exist_using_id(i)
+      if fetch_user_details:
+        fetch_user_details['_id'] = str(fetch_user_details['_id'])
+        interseted_users.append(fetch_user_details)
+  fetch_project['g_id'] = fetch_user.get("g_id", None)
+  fetch_project['interested_users'] = interseted_users
+  fetch_project['is_user_interested'] = is_user_interested
+  res = {}
+  res['meta'] = {'project_id':id}
+  res['data'] = fetch_project
+  return res
 
 """
 ------------------------------------------------------------------------
@@ -600,8 +638,8 @@ async def updateuserpic(req: Request):
 # fetch 
 @app.get('/search')
 def findkey(req: Request,q):
-  count=db.users.count_documents({"name": q})
-  cursor = db.users.find({"name": q})
+  count=db.users.count_documents({"name": {"$regex":q,"$options":"i"}})
+  cursor = db.users.find({"name": {"$regex":q,"$options":"i"}})
   res={}
   res["meta"]={}
   res["data"]=[]
@@ -609,7 +647,7 @@ def findkey(req: Request,q):
     i["_id"]=str(i["_id"])
     res["data"].append(i)
   res["meta"]={"count":count}
-  cursor = db.skills.find_one({"name": q})
+  cursor = db.skills.find_one({"name": {"$regex":q,"$options":"i"}})
   if(cursor):
     main_skill=cursor["name"]
     sub_skills=cursor["subskills"]
@@ -621,6 +659,7 @@ def findkey(req: Request,q):
       fetch_sub_profile=db.users.find({"skills":{"$regex":sub_skill,"$options":"i"}})
       for i in list(fetch_sub_profile):
         i["_id"]=str(i["_id"])
+        
         res["data"].append(i) 
   else:
     fetch_query=db.users.find({"skills":{"$regex":q,"$options":"i"}})
@@ -628,6 +667,10 @@ def findkey(req: Request,q):
       i["_id"]=str(i["_id"])
       res["data"].append(i)
     res["meta"]={"count":count}
+  hashmap = {}
+  for i in res["data"]:
+    hashmap[i["_id"]] = i
+  res["data"] = [hashmap[k] for k in hashmap]
   return res
 app.include_router(auth.router)
 

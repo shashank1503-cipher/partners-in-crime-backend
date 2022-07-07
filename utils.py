@@ -9,6 +9,11 @@ def check_user_exists_using_email(email):
     if user:
         return user
     return None
+def check_user_exist_using_id(id):
+    user = read_one(db,"users", {"_id": ObjectId(id)})
+    if user:
+        return user
+    return None
 def create_notification(user_id, title,description,type):
     notification = {
         "user_id": ObjectId(user_id),
