@@ -378,7 +378,7 @@ def fetch_project(req: Request,id:str):
     raise HTTPException(status_code=404, detail="No Project Found")
   fetch_project['_id'] = str(fetch_project['_id'])
   fetch_project['user_id'] = str(fetch_project['user_id'])
-  if fetch_project['user_id'] == fetch_user['_id']:
+  if ObjectId(fetch_project['user_id']) == ObjectId(fetch_user['_id']):
     fetch_project['is_owner'] = True
   else:
     fetch_project['is_owner'] = False
