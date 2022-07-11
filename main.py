@@ -625,18 +625,14 @@ async def updateuserpic(req: Request):
   userId = fetch_user['_id']
   data = await req.body()
   data = json.loads(data)
-  fetch_new_skills = data.pop("newSkills", None)
-  new_skills = []
-  for skill in fetch_new_skills:
-    skill_doc = {'name':skill,'subskills':[]}
-    new_skills.append(skill_doc)
-  
-  if fetch_new_skills:
-    try:
-      db['skills'].insert_many(new_skills)
-    except Exception as e:
-      print(e)
-      # raise HTTPException(status_code=500, detail="Error Adding Skills to Search Index")
+  fetch_skills = data.get("skills", None)
+  try:
+    for skill in fetch_skills:
+      count = db["skills"].count_documents({"name":skill})
+      if count == 0:
+        db["skills"].insert_one({"name":skill,'subskills':[]})
+  except:
+    pass
   try: 
     if data:
       db["users"].update_one({"_id":ObjectId(userId)},{"$set": data})
