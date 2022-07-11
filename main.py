@@ -622,11 +622,21 @@ async def updateuserpic(req: Request):
   fetch_user = check_user_exists_using_email(user_email)
   if not fetch_user:
     raise HTTPException(status_code=400, detail="User Not Found")
-  
   userId = fetch_user['_id']
   data = await req.body()
   data = json.loads(data)
+  fetch_new_skills = data.pop("newSkills", None)
+  new_skills = []
+  for skill in fetch_new_skills:
+    skill_doc = {'name':skill,'subskills':[]}
+    new_skills.append(skill_doc)
   
+  if fetch_new_skills:
+    try:
+      db['skills'].insert_many(new_skills)
+    except Exception as e:
+      print(e)
+      # raise HTTPException(status_code=500, detail="Error Adding Skills to Search Index")
   try: 
     if data:
       db["users"].update_one({"_id":ObjectId(userId)},{"$set": data})
