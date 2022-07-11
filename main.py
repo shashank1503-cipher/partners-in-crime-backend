@@ -125,6 +125,18 @@ def autocomp(q):
 
     return result
 
+@app.get('/searchmessage')
+def search_message(q):
+  count=db.users.count_documents({"name": {"$regex":q,"$options":"i"}})
+  cursor = db.users.find({"name": {"$regex":q,"$options":"i"}})
+  res={}
+  res["meta"]={}
+  res["data"]=[]
+  for i in list(cursor):
+    i["_id"]=str(i["_id"])
+    res["data"].append(i)
+  res["meta"]={"count":count}
+  return res
 
 @app.get("/profile/{id}")
 def get_profile(req:Request,id):
