@@ -175,13 +175,7 @@ async def add_project(req: Request):
   authorization  = req.headers.get("Authorization")
   try:
         id_token = authorization.split(" ")[1]
-        # print(auth_token)
-        # user = id_token.verify_oauth2_token(auth_token,requests.Request(),  '712712296189-2oahq4t0sis03q14jqoccs8e6tuvpbfd.apps.googleusercontent.com', clock_skew_in_seconds=10)
         user = admin_auth.verify_id_token(id_token)
-        
-        # print("---------------------------------------")
-        # print("USER : ", user)
-        # print("---------------------------------------")
   except Exception as e:
         print(e)
   if not user:
@@ -225,6 +219,80 @@ async def add_project(req: Request):
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Project")
+@app.put("/project/{id}")
+def update_project(req: Request,id:str):
+  if not ObjectId.is_valid(id):
+    raise HTTPException(status_code=400, detail="Invalid Project Id")
+  user = asyncio.run(verify(req.headers.get("Authorization")))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_user_id = fetch_user.get("_id", None)
+  fetch_project = db["projects"].find_one({"_id":ObjectId(id)})
+  if not fetch_project:
+    raise HTTPException(status_code=404, detail="No Project Found")
+  if fetch_user_id != fetch_project.get("user_id", None):
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  data = req.json
+  if not data:
+    raise HTTPException(status_code=400, detail="No Data Found")
+  result = {}
+  fetch_hero_image = data.get("image_url", None)  
+  if fetch_hero_image:
+    result['hero_image'] = fetch_hero_image
+  fetch_title = data.get("title", None)
+  if fetch_title:
+    result['title'] = fetch_title
+  fetch_description = data.get("description", None)
+  if fetch_description:
+    result['description'] = fetch_description
+  fetch_idea = data.get("idea", None)
+  if fetch_idea:
+    result['idea'] = fetch_idea
+  fetch_required_skills = data.get("skills", None)
+  if fetch_required_skills:
+    result['required_skills'] = fetch_required_skills
+  try:
+    collection = db["projects"]
+    fetch_updated_project = collection.update_one({"_id":ObjectId(id)},{"$set":result})
+    fid = str(fetch_updated_project.inserted_id)
+    result.pop("_id")
+    result.pop("user_id")
+    return {"meta":{"inserted_id":fid},"data":result}
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error Updating Project")
+@app.delete("/project/{id}")
+def delete_project(req: Request,id:str):
+  if not ObjectId.is_valid(id):
+    raise HTTPException(status_code=400, detail="Invalid Project Id")
+  user = asyncio.run(verify(req.headers.get("Authorization")))
+  if not user:
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  user_email = user.get("email", None)
+  if not user_email:
+    raise HTTPException(status_code=400, detail="User Email Not Found")
+  fetch_user = check_user_exists_using_email(user_email)
+  if not fetch_user:
+    raise HTTPException(status_code=400, detail="User Not Found")
+  fetch_user_id = fetch_user.get("_id", None)
+  fetch_project = db["projects"].find_one({"_id":ObjectId(id)})
+  if not fetch_project:
+    raise HTTPException(status_code=404, detail="No Project Found")
+  if fetch_user_id != fetch_project.get("user_id", None):
+    raise HTTPException(status_code=401, detail="Unauthorized")
+  try:
+    collection = db["projects"]
+    fetch_deleted_project = collection.delete_one({"_id":ObjectId(id)})
+    return {"meta":{"deleted_id":id}}
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error Deleting Project")
 
 @app.get("/fetchprojects")
 def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
@@ -310,9 +378,14 @@ def fetch_project(req: Request,id:str):
     raise HTTPException(status_code=404, detail="No Project Found")
   fetch_project['_id'] = str(fetch_project['_id'])
   fetch_project['user_id'] = str(fetch_project['user_id'])
+  if fetch_project['user_id'] == fetch_user['_id']:
+    fetch_project['is_owner'] = True
+  else:
+    fetch_project['is_owner'] = False
   fetch_interested_users = fetch_project['interested_users']
   interseted_users = []
   is_user_interested = False
+  
   if fetch_interested_users:
     for i in fetch_interested_users:
       user_id = fetch_user.get("_id", None)
@@ -331,6 +404,8 @@ def fetch_project(req: Request,id:str):
   res['meta'] = {'project_id':id}
   res['data'] = fetch_project
   return res
+
+
 
 """
 ------------------------------------------------------------------------
