@@ -248,7 +248,7 @@ def fetch_projects(req: Request,q:str,page:int=1,per_page:int=10):
   result = []
   for i in list(fetch_projects):
     i['_id'] = str(i['_id'])
-    fetch_user_id = i.get("user_id", None)
+    fetch_user_id = fetch_user['_id']
     if fetch_user_id:
       i['user_id'] = str(i['user_id'])
     count_interested = db['projects'].count_documents({"_id":ObjectId(i['_id']),"interested_users":ObjectId(fetch_user_id)})
