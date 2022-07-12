@@ -246,7 +246,8 @@ async def update_project(req: Request,id:str):
     raise HTTPException(status_code=401, detail="Unauthorized")
   data = await req.body()
   if not data:
-    raise HTTPException(status_code=400, detail="No Data Found")
+    raise HTTPException(status_code=400, detail="No Data Found")  
+  data = json.loads(data)
   result = {}
   fetch_hero_image = data.get("image_url", None)  
   if fetch_hero_image:
