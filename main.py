@@ -120,9 +120,11 @@ def autocomp(q):
             if j:
                 count+=1
                 data.append({"name":j})
+    hashmap = {}
+    for i in result["data"]:
+      hashmap[i["name"]] = i
+    result["data"] = [hashmap[k] for k in hashmap]
     result["meta"]={"total":count}
-    result["data"]=data
-
     return result
 @app.get("/skillssuggestions")
 def autocompleteskill(q):
@@ -159,8 +161,11 @@ def autocompleteskill(q):
             if j:
                 count+=1
                 data.append({"name":j})
+    hashmap = {}
+    for i in result["data"]:
+      hashmap[i["name"]] = i
+    result["data"] = [hashmap[k] for k in hashmap]
     result["meta"]={"total":count}
-    result["data"]=data
     return result
 @app.get('/searchmessage')
 def search_message(q):
