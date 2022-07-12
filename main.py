@@ -266,11 +266,8 @@ async def update_project(req: Request,id:str):
     result['required_skills'] = fetch_required_skills
   try:
     collection = db["projects"]
-    fetch_updated_project = collection.update_one({"_id":ObjectId(id)},{"$set":result})
-    fid = str(fetch_updated_project.inserted_id)
-    result.pop("_id")
-    result.pop("user_id")
-    return {"meta":{"inserted_id":fid},"data":result}
+    collection.update_one({"_id":ObjectId(id)},{"$set":result})
+    return {"meta":{"updated_id":id},"data":result}
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error Updating Project")
