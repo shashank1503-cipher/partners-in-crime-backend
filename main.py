@@ -124,7 +124,45 @@ def autocomp(q):
     result["data"]=data
 
     return result
+@app.get("/skillssuggestions")
+def autocomp(q):
+    pipeline = [
+   {
+     '$search': {
+       'index': 'autodefault',
+       "autocomplete": {
+         "query": q,
+         "path":'name',
+        "tokenOrder": "sequential"
+       }
+      }
+  },
+   {
+     '$limit': 10
+   },{
+    '$project': {
+       "name": 1,
+        "subskills": 1
+     }
+   }
+    ]
+    count=0
+    data = []
+    result = {}
+    skillCollection = db['skills']
+    aggregatedresult=skillCollection.aggregate(pipeline)
+    for i in list(aggregatedresult):
+        count+=1
+        data.append({"name":i["name"]})
+        subskills = i.get("subskills", [])
+        for j in subskills:
+            if j:
+                count+=1
+                data.append({"name":j})
+    result["meta"]={"total":count}
+    result["data"]=data
 
+    return result
 @app.get('/searchmessage')
 def search_message(q):
   count=db.users.count_documents({"name": {"$regex":q,"$options":"i"}})
