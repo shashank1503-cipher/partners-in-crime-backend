@@ -24,3 +24,5 @@ def create_notification(user_id, title,description,type):
         'is_read': False
     }
     create(db, "notifications", notification)
+
+

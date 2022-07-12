@@ -220,10 +220,16 @@ async def add_project(req: Request):
     print(e)
     raise HTTPException(status_code=500, detail="Error Adding Project")
 @app.put("/project/{id}")
-def update_project(req: Request,id:str):
+async def update_project(req: Request,id:str):
   if not ObjectId.is_valid(id):
     raise HTTPException(status_code=400, detail="Invalid Project Id")
-  user = asyncio.run(verify(req.headers.get("Authorization")))
+  user = None
+  authorization  = req.headers.get("Authorization")
+  try:
+        id_token = authorization.split(" ")[1]
+        user = admin_auth.verify_id_token(id_token)
+  except Exception as e:
+        print(e)
   if not user:
     raise HTTPException(status_code=401, detail="Unauthorized")
   user_email = user.get("email", None)
@@ -238,7 +244,7 @@ def update_project(req: Request,id:str):
     raise HTTPException(status_code=404, detail="No Project Found")
   if fetch_user_id != fetch_project.get("user_id", None):
     raise HTTPException(status_code=401, detail="Unauthorized")
-  data = req.json
+  data = await req.body()
   if not data:
     raise HTTPException(status_code=400, detail="No Data Found")
   result = {}
