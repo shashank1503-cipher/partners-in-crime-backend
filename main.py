@@ -125,7 +125,7 @@ def autocomp(q):
 
     return result
 @app.get("/skillssuggestions")
-def autocomp(q):
+def autocompleteskill(q):
     pipeline = [
    {
      '$search': {
@@ -161,7 +161,6 @@ def autocomp(q):
                 data.append({"name":j})
     result["meta"]={"total":count}
     result["data"]=data
-
     return result
 @app.get('/searchmessage')
 def search_message(q):
