@@ -121,7 +121,7 @@ def autocomp(q):
                 count+=1
                 data.append({"name":j})
     hashmap = {}
-    for i in result["data"]:
+    for i in data:
       hashmap[i["name"]] = i
     result["data"] = [hashmap[k] for k in hashmap]
     result["meta"]={"total":count}
@@ -162,7 +162,8 @@ def autocompleteskill(q):
                 count+=1
                 data.append({"name":j})
     hashmap = {}
-    for i in result["data"]:
+    
+    for i in data:
       hashmap[i["name"]] = i
     result["data"] = [hashmap[k] for k in hashmap]
     result["meta"]={"total":count}
