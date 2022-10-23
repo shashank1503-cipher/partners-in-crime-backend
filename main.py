@@ -848,5 +848,3 @@ def getUserDataForChat(req: Request, skip=0):
 @app.get("/")
 def home():
     return {"Let's": "Go"}
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
