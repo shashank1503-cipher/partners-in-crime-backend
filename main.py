@@ -23,7 +23,8 @@ origins = [
     "http://localhost:3000",
     "https://partners-in-crime.vercel.app",
     "https://partners-in-crime-backend-production.up.railway.app/",
-    "https://partners-in-crime-shashank1503-cipher.koyeb.app/"
+    "https://partners-in-crime-shashank1503-cipher.koyeb.app/",
+    "https://partners-in-crime-backup.herokuapp.com/"
 ]
 
 app.add_middleware(
