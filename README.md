@@ -125,11 +125,6 @@ Ishaan Mahesh - [Linkedin](https://www.linkedin.com/in/ishaan-mahesh/) - ishaanm
 
 Project Link: [https://github.com/shashank1503-cipher/partners-in-crime](https://github.com/shashank1503-cipher/partners-in-crime)
 
-<!-- ACKNOWLEDGMENTS -->
-
-## Acknowledgments
-
-- [React Icons](https://react-icons.github.io/react-icons/search)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
