@@ -87,6 +87,10 @@ Setup PartnersInCrime on your local machine using these simple steps:
    ```sh
    pip install -r requirements.txt
    ```
+- Start Server
+   ```sh
+   uvicorn main:app --reload
+   ```
 
 >For Frontend
 - Visit [partners-in-crime](https://github.com/shashank1503-cipher/partners-in-crime) for backend repository
