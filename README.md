@@ -80,7 +80,8 @@ Setup PartnersInCrime on your local machine using these simple steps:
 - Create and activate virtualenv
    ```sh
    virtualenv venv
-   cd venv/scripts/activate
+   cd venv/scripts
+   ./activate
    ```
 - Install Requirements
    ```sh
